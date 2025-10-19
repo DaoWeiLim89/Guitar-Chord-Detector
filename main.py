@@ -54,7 +54,7 @@ def chroma_func(myrecording: np.ndarray, frequency: int)->np.ndarray:
     # isolate harmonics component
     recording_harm = librosa.effects.harmonic(y=myrecording, margin=8)
 
-    # non-local filtering (computationally expensive)
+    # non-local filtering (computationally too expensive)
     '''chroma_filter = np.minimum(recording_harm,
                            librosa.decompose.nn_filter(recording_harm,
                                                        aggregate=np.median,
@@ -217,15 +217,6 @@ def main():
         sd.wait()
         myrecording = myrecording.flatten()
 
-    elif flag == "-u":
-        print("Uploading audio...")
-        path = "AudioFiles/Are You Looking Up copy.mp3"
-        path = "AudioFiles/Creep.mp3"
-        path = "AudioFiles/Blue by You copy.mp3"
-        #path = "AudioFiles/Steeeam.mp3"
-        myrecording, sr = librosa.load(path, sr=frequency, mono=True)
-        myrecording = myrecording.flatten()
-
     elif flag == "-f":
     # For testing - accepts file path
         if len(args) < 2:
@@ -237,7 +228,8 @@ def main():
 
     else:
         print("Invalid Input")
-        print("Usage: -r [duration] or -u")
+        print("Usage: -r [duration] or -f [path]")
+        print("-r to record audio, -f to upload file")
         sys.exit(1)
 
     all_chords = chord_template()
