@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
+import sys
 import numpy as np
 import librosa
 from numpy.linalg import norm
+from typing import Optional, Dict, Any
 
 # Define chord templates
 
@@ -99,7 +101,7 @@ def predict_chords(chroma_cqt: np.ndarray, all_chords: dict, threshold: float=0.
 
     return predicted_chords
 
-def post_process_chords(predicted_chords: list, min_frames: int|None) -> list:
+def post_process_chords(predicted_chords: list, min_frames: int|None) -> list[Optional[str]]:
     """
     Post-processing to remove very short chord segments
     min_duration: minimum number of frames a chord should last
