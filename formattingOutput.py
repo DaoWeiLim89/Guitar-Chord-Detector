@@ -190,11 +190,87 @@ def format_chord_grid(centisecond_chords: List[Optional[str]],
     return "\n".join(output)
 
 def get_lyrics_timestamps(synced_lyrics: str)->list[str]:
+    ''' Extracts time stamps from synced_lyrics '''
     timestamps = []
     lines = synced_lyrics.split('\n')
     for line in lines:
         timestamps.append(line[0:10])
     return timestamps
+
+def format_synced_chord_grid(centisecond_chords: List[Optional[str]], timestamps: list[str]) -> str:
+    """
+    Format chords in a grid showing chord changes within time intervals specified by timestamps.
+    Consecutive duplicate chords are not shown, and spacing reflects when changes occur.
+    Args:
+        centisecond_chords: List of chords per centisecond
+        timestamps: List of strings containing each time interval
+    Returns:
+        Formatted string with grid layout
+    Example:
+        [00:05.53] C       D              E
+        [00:13.28] C        D              E
+        [00:17.11] C   G             E
+    """
+    output = []
+    total_duration_cs = len(centisecond_chords)
+    start_interval_cs = 0
+    # Process each interval
+    for timestamp in timestamps[1:]:
+        time_cs = timestamp[1:-1]
+        mins, cseconds = time_cs.split(":")
+        end_interval_cs = int(float(mins) * 60 * 100 + float(cseconds) * 100)
+
+        # Collect chord changes within this interval
+        changes_in_interval = []
+        last_chord = None
+
+        for cs in range(start_interval_cs, end_interval_cs):
+            current_chord = centisecond_chords[cs]
+
+            # Only record when chord changes and skip None
+            if current_chord != last_chord and current_chord is not None:
+                # Calculate relative position within interval (0 to 1)
+                relative_position = (cs - start_interval_cs) / (end_interval_cs-start_interval_cs)
+                changes_in_interval.append((relative_position, current_chord))
+                last_chord = current_chord
+        
+        # Format the line with spacing
+        if changes_in_interval:
+            line = timestamp + " "
+            
+            # Create spacing based on relative positions
+            # Use a dynamic character width for the chord display area
+            chord_area_width = int(80 / 10 * (end_interval_cs - start_interval_cs)) #assuming 10s = max width
+            
+            for i, (position, chord) in enumerate(changes_in_interval):
+                # Calculate spacing before this chord
+                if i == 0:
+                    # First chord - add spaces based on its position
+                    num_spaces = int(position * chord_area_width)
+                    line += " " * num_spaces
+                else:
+                    # Subsequent chords - space based on distance from previous
+                    prev_position = changes_in_interval[i-1][0]
+                    prev_chord = changes_in_interval[i-1][1]
+                    
+                    # Distance between chords
+                    distance = position - prev_position
+                    num_spaces = int(distance * chord_area_width) - len(prev_chord)
+                    num_spaces = max(1, num_spaces)  # At least 1 space
+                    line += " " * num_spaces
+                
+                line += chord
+            
+            output.append(line)
+        else:
+            # No chords in this interval
+            output.append(timestamp)
+        
+        start_interval_cs = end_interval_cs
+
+        # last timestamp to end of song segment
+    
+    return "\n".join(output)
 
 # Example usage
 if __name__ == "__main__":

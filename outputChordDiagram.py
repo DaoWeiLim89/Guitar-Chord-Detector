@@ -15,13 +15,16 @@ def display_only_chords(predicted_chords: list[Optional[str]])->None:
 def display_output_synced(lyrics_data: Dict[str, Any], predicted_chords: list[Optional[str]])->None:
     ''' Displays synced lyrics with chords '''
     centisecond_chord = formattingOutput.chords_to_centiseconds(predicted_chords)
-    lyrics_synced = lyrics_data.get("syncedLyrics")
+    lyrics_synced = lyrics_data.get("synced_lyrics")
     if lyrics_synced is None:
-        print("Error outputting chord synced lyrics.\n Synced lyrics not found")
+        print("Error outputting chord synced lyrics.\nSynced lyrics not found")
     else:
         timestamps = formattingOutput.get_lyrics_timestamps(lyrics_synced)
-        formatted_output = formattingOutput.format_chord_grid(centisecond_chord) # change this
+        lyrics_indiv_lines = lyrics_synced.split("\n") # works, need to iterate through
+        formatted_chords = formattingOutput.format_synced_chord_grid(centisecond_chord, timestamps) # change this
         print("Printing Chords:")
+        #print(formatted_chords)
+        print(formatted_chords)
 
 
 def display_output_unsynced(lyrics_data: Dict[str, Any], predicted_chords: list[Optional[str]])->None:
