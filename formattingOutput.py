@@ -63,6 +63,12 @@ def format_lrc_timestamp(centiseconds: int) -> str:
     
     return f"[{minutes:02d}:{seconds:02d}.{cents:02d}]"
 
+def timestamp_to_cs(timestamp: str)->int:
+    timestamp = timestamp[1:-1]
+    mins, cseconds = timestamp.split(":")
+    centiseconds = int(float(mins) * 60 * 100 + float(cseconds) * 100)
+    return centiseconds
+
 def get_chord_changes(centisecond_chords: List[Optional[str]]) -> List[tuple]:
     """
     Extract chord changes with timestamps.
@@ -213,12 +219,15 @@ def format_synced_chord_grid(centisecond_chords: List[Optional[str]], timestamps
     """
     output = []
     total_duration_cs = len(centisecond_chords)
+    total_duration_lyrics = timestamp_to_cs(timestamps[-1])
+    if total_duration_lyrics > total_duration_cs:
+        print("Lyrics longer than duration of mp3 file. Likely lyrics mismatch. Exiting")
+        exit(1)
     start_interval_cs = 0
+    prev_timestamp = "[00:00.00]"
     # Process each interval
     for timestamp in timestamps[1:]:
-        time_cs = timestamp[1:-1]
-        mins, cseconds = time_cs.split(":")
-        end_interval_cs = int(float(mins) * 60 * 100 + float(cseconds) * 100)
+        end_interval_cs = timestamp_to_cs(timestamp)
 
         # Collect chord changes within this interval
         changes_in_interval = []
@@ -236,11 +245,11 @@ def format_synced_chord_grid(centisecond_chords: List[Optional[str]], timestamps
         
         # Format the line with spacing
         if changes_in_interval:
-            line = timestamp + " "
+            line = prev_timestamp + " "
             
             # Create spacing based on relative positions
             # Use a dynamic character width for the chord display area
-            chord_area_width = int(80 / 10 * (end_interval_cs - start_interval_cs)) #assuming 10s = max width
+            chord_area_width = int(50 / 10 * ((end_interval_cs - start_interval_cs)/100)) #assuming 10s = max width
             
             for i, (position, chord) in enumerate(changes_in_interval):
                 # Calculate spacing before this chord
@@ -260,16 +269,16 @@ def format_synced_chord_grid(centisecond_chords: List[Optional[str]], timestamps
                     line += " " * num_spaces
                 
                 line += chord
-            
             output.append(line)
         else:
             # No chords in this interval
-            output.append(timestamp)
+            output.append(prev_timestamp)
         
         start_interval_cs = end_interval_cs
+        prev_timestamp = timestamp
 
-        # last timestamp to end of song segment
-    
+    # last timestamp to end of song segment
+    output.append(prev_timestamp + " End")
     return "\n".join(output)
 
 # Example usage

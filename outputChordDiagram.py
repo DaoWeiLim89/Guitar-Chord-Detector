@@ -20,11 +20,17 @@ def display_output_synced(lyrics_data: Dict[str, Any], predicted_chords: list[Op
         print("Error outputting chord synced lyrics.\nSynced lyrics not found")
     else:
         timestamps = formattingOutput.get_lyrics_timestamps(lyrics_synced)
-        lyrics_indiv_lines = lyrics_synced.split("\n") # works, need to iterate through
-        formatted_chords = formattingOutput.format_synced_chord_grid(centisecond_chord, timestamps) # change this
+        lyrics_indiv_lines = lyrics_synced.strip().split("\n")
+        formatted_chords = formattingOutput.format_synced_chord_grid(centisecond_chord, timestamps)
+        formatted_chords_lines = formatted_chords.split("\n")
         print("Printing Chords:")
-        #print(formatted_chords)
-        print(formatted_chords)
+
+        if (len(lyrics_indiv_lines) != len(formatted_chords_lines)):
+            print("Length diff")
+        else:
+            for i in range(len(formatted_chords_lines)):
+                print(formatted_chords_lines[i])
+                print(lyrics_indiv_lines[i])
 
 
 def display_output_unsynced(lyrics_data: Dict[str, Any], predicted_chords: list[Optional[str]])->None:

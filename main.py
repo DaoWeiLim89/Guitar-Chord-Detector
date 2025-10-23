@@ -134,7 +134,6 @@ def main():
 
             if isSynced:
                 print("Now outputting synced lyrics")
-                #print(songLyrics)
                 outputChordDiagram.display_output_synced(songLyrics, processed_chords)
             else:
                 print("Now outputting unsynced lyrics")
