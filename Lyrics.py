@@ -136,6 +136,7 @@ def display_lyrics(lyrics_data: Dict[str, Any]) -> None:
     print(f"Artist: {lyrics_data.get('artist', 'Unknown')}")
     print(f"Album: {lyrics_data.get('album', 'Unknown')}")
     
+    lyrics_data = prepend_lyrics(lyrics_data)
     synced_lyrics = lyrics_data.get('synced_lyrics')
     if synced_lyrics:
         print("\nLyrics:")
