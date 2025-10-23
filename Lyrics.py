@@ -87,11 +87,46 @@ def get_lyrics(song_name: str, artist_name: str = "") -> Optional[Dict[str, Any]
         print(f"Unexpected error: {e}")
         return None
 
+def prepend_lyrics(lyrics_data: Dict[str, Any])->Dict[str, Any]:
+    prepended_lyrics = "[00:00.00]\n"
+    
+    synced = lyrics_data.get("synced_lyrics")
+
+    if synced is not None:
+        prepended_lyrics += synced
+    else:
+        print("Prepending failed. Synced lyrics are not found.")
+    
+    lyrics_data["synced_lyrics"] = prepended_lyrics
+    return lyrics_data
+
+def get_synced_lyrics(lyrics_data: Dict[str, Any]):
+    if not lyrics_data:
+        print("No lyrics to display")
+        return
+    
+    synced_lyrics = lyrics_data.get('synced_lyrics')
+
+    if synced_lyrics is None:
+        return None
+    else:
+        return synced_lyrics
+    
+def get_unsynced_lyrics(lyrics_data: Dict[str, Any]):
+    if not lyrics_data:
+        print("No lyrics to display")
+        return
+    
+    unsynced_lyrics = lyrics_data.get('plain_lyrics')
+
+    if unsynced_lyrics is None:
+        return None
+    else:
+        return unsynced_lyrics
+    
 def display_lyrics(lyrics_data: Dict[str, Any]) -> None:
     """
-    Display the synced lyrics in a readable format.
-    Note: This function shows the structure but doesn't print the actual lyrics content
-    to respect copyright.
+    Display the synced lyrics in a readable format
     """
     if not lyrics_data:
         print("No lyrics data to display")
