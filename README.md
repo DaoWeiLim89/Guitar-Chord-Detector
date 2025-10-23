@@ -1,34 +1,13 @@
-# Homework 1 - Responding to Change
+# Overview
+This project converts a song to the corresponding guitar chords and the lyrics. As an intermediate guitar player, I often struggle with learning a song by ear. So, I created a python program that takes in an MP3 file and prints out the chords and the lyrics nicely formatted for me to learn. Try it and let me know how it goes!
 
 ## Authors
-
-1) Dao Wei Lim, dlim3, [DaoWeiLim89]
+Dao Wei Lim, [DaoWeiLim89]
 
 ## To Run
-
-To run this file, you must run following command in the terminal first:
-./gradlew build
-
-Then write out the following command and be sure it is in the right format:
-java -jar Apportionment.jar <filepath> <number of representatives>
-
-Number of representatives is optional, if not entered, it will default to 435
-
-Format of CSV:
-State, Population  <--- Header Line Mandatory
-(State Name - String), (Population - positive integer)
-
-## Contributions
-
-### [Dao Wei Lim]
-
-* Author 1 contributions
-* Created the 3 main classes: State Parsing and Main
-* Did the variables and functions for State and for Parsing. 
-* Did a manual test on the parsing with the creation of the parsing_test.csv
-* Did the code for handling of input for Parsing
+To use this program, you need the mp3 version of the song. It is recommended that you use the original recording of the song to ensure that the chords sync with the lyrics. 
+Usage: -r [duration] or -f [path] or -fl [path] [Song Name] [Artist Name (Optional)]
+       -r to record audio, -f to upload file, -fl to upload file and get lyrics
 
 ## Issues
-
-No known issues.
-# Guitar-Chord-Detector
+No known issues currently. Feel free to let me know if there are any issues you run into!
