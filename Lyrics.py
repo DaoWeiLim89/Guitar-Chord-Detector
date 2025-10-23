@@ -20,7 +20,7 @@ def get_lyrics(song_name: str, artist_name: str = "") -> Optional[Dict[str, Any]
     base_url = "https://lrclib.net/api"
     
     try:
-        # Step 1: Search for the song
+        # Search for song
         search_url = f"{base_url}/search"
         search_params = {
             "q": f"{artist_name} {song_name}".strip()
@@ -36,7 +36,7 @@ def get_lyrics(song_name: str, artist_name: str = "") -> Optional[Dict[str, Any]
             print("No search results found")
             return None
         
-        # Step 2: Get the top result
+        # Get the top result
         top_result = search_results[0]
         song_id = top_result.get('id')
         
@@ -46,7 +46,7 @@ def get_lyrics(song_name: str, artist_name: str = "") -> Optional[Dict[str, Any]
         
         print(f"Found song: {top_result.get('name', 'Unknown')} by {top_result.get('artistName', 'Unknown Artist')}")
         
-        # Step 3: Get detailed info including synced lyrics
+        # Get detailed info including synced lyrics
         detail_url = f"{base_url}/get/{song_id}"
         detail_response = requests.get(detail_url)
         detail_response.raise_for_status()
@@ -55,7 +55,7 @@ def get_lyrics(song_name: str, artist_name: str = "") -> Optional[Dict[str, Any]
         
         # Check if synced lyrics are available
         if song_details.get('syncedLyrics'):
-            print("✓ Synced lyrics found!")
+            print("Synced lyrics found on lrclib!")
             return {
                 'id': song_details.get('id'),
                 'name': song_details.get('name'),
