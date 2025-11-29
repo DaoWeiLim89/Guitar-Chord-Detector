@@ -150,8 +150,5 @@ def main():
         print("-r to record audio, -f to upload file, -fl to upload file and get lyrics")
         sys.exit(1)
 
-    
-    
-
 if __name__ == '__main__':
     main()
