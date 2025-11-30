@@ -42,6 +42,63 @@ def show_graph(chroma_cqt: np.ndarray):
 
     print(chroma_cqt)
 
+def process_audio_file(temp_path, song_name, artist_name):
+    ''' 
+    Convert Audio files to chords and lyrics for API call in app.py
+    input: file path, song name, artist name
+    output: [type: {synced, unsynced}, output: str]
+    '''
+    # default
+    frequency = 22050
+    all_chords = chromaGeneration.chord_template()
+
+    filepath = temp_path
+    songName = song_name
+    artistName = artist_name
+    output = None
+    type = "Not Set"
+    # Get file recording
+    myrecording, sr = librosa.load(filepath, sr=frequency, mono=True)
+    myrecording = myrecording.flatten()
+    # Process Chords
+    chroma_cqt = chromaGeneration.chroma_func(myrecording, frequency)
+    predicted_chords = chromaGeneration.predict_chords(chroma_cqt, all_chords)
+    processed_chords = chromaGeneration.post_process_chords(predicted_chords, 5)
+
+    songLyrics = lyrics.get_lyrics(songName, artistName)
+    isSynced = False
+    synced_lyrics = None
+    unsynced_lyrics = None
+
+    if songLyrics is not None:
+        # Process Lyrics
+        songLyrics = lyrics.prepend_lyrics(songLyrics) # prepend with [00:00.00]
+        synced_lyrics = lyrics.get_synced_lyrics(songLyrics)
+        unsynced_lyrics = lyrics.get_unsynced_lyrics(songLyrics)
+
+        if synced_lyrics is not None:
+            isSynced = True
+
+        if synced_lyrics is None and unsynced_lyrics is None:
+            #print("Lyrics could not be found\nPrinting Chords:")
+            type = "chords_only"
+            output = outputChordDiagram.return_only_chords(processed_chords)
+
+        elif isSynced:
+            #print("Now outputting synced lyrics")
+            type = "synced"
+            output = outputChordDiagram.return_output_synced(songLyrics, processed_chords)
+        else:
+            #print("Now outputting unsynced lyrics")
+            type = "unsynced"
+            output = outputChordDiagram.return_output_unsynced(songLyrics, processed_chords)
+        
+    else:
+        print("Lyrics could not be found\nPrinting Chords:")
+        output =  outputChordDiagram.return_only_chords(processed_chords)
+ 
+    return [type, output]
+
 def main():
     ''' 
     parse input 
@@ -132,7 +189,7 @@ def main():
                 print("Lyrics could not be found\nPrinting Chords:")
                 outputChordDiagram.display_only_chords(processed_chords)
 
-            if isSynced:
+            elif isSynced:
                 print("Now outputting synced lyrics")
                 outputChordDiagram.display_output_synced(songLyrics, processed_chords)
             else:
