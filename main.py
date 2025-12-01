@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import sounddevice as sd
 import numpy as np
 from numpy.linalg import norm
 import librosa
@@ -118,24 +117,7 @@ def main():
 
     flag = args[0]
 
-    if flag == "-r":
-    # Records Audio to Anaylze
-        if len(args) > 1:
-            try:
-                Duration = float(args[1])
-            except ValueError:
-                print("Invalid duration, using default 10s.")
-        print("Recording...")
-        myrecording = sd.rec(int(Duration * frequency), samplerate=frequency, channels=1)
-        sd.wait()
-        myrecording = myrecording.flatten()
-        chroma_cqt = chromaGeneration.chroma_func(myrecording, frequency)
-        predicted_chords = chromaGeneration.predict_chords(chroma_cqt, all_chords)
-        processed_chords = chromaGeneration.post_process_chords(predicted_chords, 5)
-        #show_graph(chroma_cqt)
-        show_chords(processed_chords)
-
-    elif flag == "-f":
+    if flag == "-f":
     # Accepts file path (MP3)
         if len(args) < 2:
             print("Please provide a file path")
@@ -203,8 +185,8 @@ def main():
 
     else:
         print("Invalid Input")
-        print("Usage: -r [duration] or -f [path] or -fl [path] [Song Name] [Artist Name (Optional)]")
-        print("-r to record audio, -f to upload file, -fl to upload file and get lyrics")
+        print("Usage: -f [path] or -fl [path] [Song Name] [Artist Name (Optional)]")
+        print("-f to upload file, -fl to upload file and get lyrics")
         sys.exit(1)
 
 if __name__ == '__main__':

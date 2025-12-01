@@ -6,10 +6,13 @@ Dao Wei Lim, [DaoWeiLim89]
 
 ## To Run
 To use this program, you need the mp3 version of the song. It is recommended that you use the original recording of the song to ensure that the chords sync with the lyrics. 
-Usage: -r [duration] or -f [path] or -fl [path] [Song Name] [Artist Name (Optional)]
-       -r to record audio, -f to upload file, -fl to upload file and get lyrics
+Usage: -f [path] or -fl [path] [Song Name] [Artist Name (Optional)]
+       -f to upload file, -fl to upload file and get lyrics
 Example: 
 ./main.py -fl testing/AudioFiles/About\ You.mp3 "About You" "The 1975"
 
 ## Issues
 No known issues currently. Feel free to let me know if there are any issues you run into!
+
+## Note
+This project now also has API functionality hosted on render.com! Website for it coming soon!
