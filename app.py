@@ -48,9 +48,9 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     )
 
 @app.post("/api/analyzeChords", response_model=SuccessResponse | ErrorResponse)
-@limiter.limit("10/minute")
+@limiter.limit("3/minute")
 async def analyze_Chords(
-    request: Request, # instead of websockets (doesn't need back open connection for back and forth conversation)
+    request: Request, # instead of websockets (doesn't need open connection for back and forth conversation)
     file: UploadFile = File(..., max_length=50_000_000),  # Max file size ~50MB
     song_name: str = Form(...),
     artist_name: str = Form(...)
