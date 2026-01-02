@@ -75,10 +75,8 @@ def chords_to_centiseconds(processed_chords: List[Optional[str]], hop_length: in
 def format_lrc_timestamp(centiseconds: int) -> str:
     """
     Format centiseconds as LRC timestamp [MM:SS.CC]
-    
     Args:
         centiseconds: Time in centiseconds
-        
     Returns:
         Formatted timestamp string like [00:12.34]
     """
@@ -99,10 +97,8 @@ def get_chord_changes(centisecond_chords: List[Optional[str]]) -> List[tuple]:
     """
     Extract chord changes with timestamps.
     Returns list of (centisecond, chord) tuples only when chord changes.
-    
     Args:
         centisecond_chords: List of chords per centisecond
-        
     Returns:
         List of (centisecond, chord_name) tuples
     """

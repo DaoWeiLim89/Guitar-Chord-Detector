@@ -20,11 +20,19 @@ def generate_extended_chords():
     # root note greatest prominence
     # template matching kind of sucks when comparing chords with 2/3 shared notes
     
-
+    '''
     # Add 7th chords
     dom7_template = np.array([1.25, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0.7, 0])  # Dominant 7th
     maj7_template = np.array([1.25, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0.7])  # Major 7th
     min7_template = np.array([1.25, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.7, 0])  # Minor 7th
+    '''
+    # Normalize all templates to unit length
+    major_template = major_template / norm(major_template)
+    minor_template = minor_template / norm(minor_template)
+    '''
+    dom7_template = dom7_template / norm(dom7_template)
+    maj7_template = maj7_template / norm(maj7_template)
+    min7_template = min7_template / norm(min7_template)'''
 
 
     for i in range(12):
@@ -32,9 +40,10 @@ def generate_extended_chords():
         chords[note] = np.roll(major_template, i)
         chords[note + 'm'] = np.roll(minor_template, i)
 
+        '''
         chords[note + '7'] = np.roll(dom7_template, i)
         chords[note + 'maj7'] = np.roll(maj7_template, i)
-        chords[note + 'm7'] = np.roll(min7_template, i)
+        chords[note + 'm7'] = np.roll(min7_template, i)'''
     
     return chords
 
@@ -85,6 +94,7 @@ def chroma_func(myrecording: np.ndarray, frequency: int)->np.ndarray:
 
     chroma_cqt = librosa.util.normalize(combined, norm=2, axis=0) # norm=2 for Euclidean norm
 
+    ''' Debugging info to see chroma values at certain frames
     np.set_printoptions(precision=3, suppress=True, linewidth=200)
     
     for t in [0, 100, 500, 1000, 2000]:
@@ -97,7 +107,7 @@ def chroma_func(myrecording: np.ndarray, frequency: int)->np.ndarray:
             print(f"  Top 3: {[note_names[i] for i in top3_idx]} = {col[top3_idx]}")
             print(f"  Max/Min ratio: {col.max() / max(col.min(), 1e-6):.1f}")
     
-    np.set_printoptions()
+    np.set_printoptions()'''
     return chroma_cqt
 
 def predict_chords(chroma_cqt: np.ndarray, all_chords: dict, threshold: float=0.825)->list:
@@ -119,16 +129,17 @@ def predict_chords(chroma_cqt: np.ndarray, all_chords: dict, threshold: float=0.
 
         chroma_norm = norm(chroma_vector)
         if chroma_norm > 0:
+            chroma_unit = chroma_vector / chroma_norm
             for chord_name, chord_template in all_chords.items():
-                template_norm = norm(chord_template)
-                if template_norm > 0:
-                    score = np.dot(chroma_vector, chord_template) / (chroma_norm * template_norm)
+                score = np.dot(chroma_unit, chord_template)
 
-                    if score > best_score:
-                        best_score = score
-                        best_match = chord_name
+                if score > best_score:
+                    best_score = score
+                    best_match = chord_name
         else:
             predicted_chords.append(None)
+            continue
+
         if best_score >= threshold:
             predicted_chords.append(best_match)
         else:
@@ -179,7 +190,7 @@ def post_process_chords(predicted_chords: list, min_frames: int|None) -> list[Op
     '''
 # implement the new post-processing method here
 
-def post_process_chords(predicted_chords: list, window_size: int = 11) -> list:
+def post_process_chords(predicted_chords: list, window_size: int = 15) -> list:
     ''' Processes chords using a Categorical Median Filter to clean up noisy predictions 
     and fill small gaps with a majority vote
     Uses a sliding window approach. Window size = width of window
