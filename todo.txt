@@ -1,4 +1,0 @@
-this chord_to_centiseconds just takes the first chord in the centisecond instead of taking the weighted average. Need to fix this. 
-
-try to make a chroma_to_seconds version if time permits. So instead the chroma output stuff will have to be reworked 
-i guess just make it so that it would take the floor -> centisecond 1.58.54 takes chord at 1.58
