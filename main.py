@@ -6,7 +6,6 @@ import librosa
 import librosa.display
 import matplotlib.pyplot as plt
 import sys
-import scipy
 import lyrics
 import chromaGeneration
 import outputChordDiagram
@@ -56,13 +55,15 @@ def process_audio_file(temp_path, song_name, artist_name):
     artistName = artist_name
     output = None
     type = "Not Set"
+
     # Get file recording
     myrecording, sr = librosa.load(filepath, sr=frequency, mono=True)
     myrecording = myrecording.flatten()
+
     # Process Chords
     chroma_cqt = chromaGeneration.chroma_func(myrecording, frequency)
     predicted_chords = chromaGeneration.predict_chords(chroma_cqt, all_chords)
-    processed_chords = chromaGeneration.post_process_chords(predicted_chords, 5)
+    processed_chords = chromaGeneration.post_process_chords(predicted_chords)
 
     songLyrics = lyrics.get_lyrics(songName, artistName)
     isSynced = False
