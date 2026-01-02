@@ -37,8 +37,13 @@ def show_graph(chroma_cqt: np.ndarray):
     plt.colorbar()
     plt.title('Chromagram (CQT-based)')
     plt.show()
-
     print(chroma_cqt)
+
+def show_usage():
+    print("Invalid Input")
+    print("Usage: -f [path] or -fl [path] [Song Name] [Artist Name (Optional)]")
+    print("-f to upload file, -fl to upload file and get lyrics")
+    return
 
 def process_audio_file(temp_path, song_name, artist_name):
     ''' 
@@ -105,15 +110,14 @@ def main():
     input: -r is for recorded, -u upload audio
     '''
     ''' parse arguments '''
-    # default
-    Duration = 10
+    # default values
     frequency = 22050
     all_chords = chromaGeneration.chord_template()
 
     args = sys.argv[1:]
 
     if not args:
-        print("Usage: -r [duration] or -u")
+        show_usage()
         sys.exit(1)
 
     flag = args[0]
@@ -121,21 +125,21 @@ def main():
     if flag == "-f":
     # Accepts file path (MP3)
         if len(args) < 2:
-            print("Please provide a file path")
+            show_usage()
             sys.exit(1)
         path = args[1]
         myrecording, sr = librosa.load(path, sr=frequency, mono=True)
         myrecording = myrecording.flatten()
         chroma_cqt = chromaGeneration.chroma_func(myrecording, frequency)
         predicted_chords = chromaGeneration.predict_chords(chroma_cqt, all_chords)
-        processed_chords = chromaGeneration.post_process_chords(predicted_chords, 5)
+        processed_chords = chromaGeneration.post_process_chords(predicted_chords)
         #show_graph(chroma_cqt)
         show_chords(processed_chords)
 
     elif flag == "-fl":
     # Accepts file path and prints with lyrics
         if not (len(args) == 3 or len(args) == 4):
-            print("Incorrect usage: -lf [Filepath] [Song Name] [Artist Name (Optional)]")
+            show_usage()
             sys.exit(1)
 
         path = args[1]
@@ -150,7 +154,7 @@ def main():
         # Process Chords
         chroma_cqt = chromaGeneration.chroma_func(myrecording, frequency)
         predicted_chords = chromaGeneration.predict_chords(chroma_cqt, all_chords)
-        processed_chords = chromaGeneration.post_process_chords(predicted_chords, 5)
+        processed_chords = chromaGeneration.post_process_chords(predicted_chords)
         #show_graph(chroma_cqt)
         #show_chords(processed_chords)
 
@@ -183,11 +187,8 @@ def main():
             print("Lyrics could not be found\nPrinting Chords:")
             outputChordDiagram.display_only_chords(processed_chords)
         
-
     else:
-        print("Invalid Input")
-        print("Usage: -f [path] or -fl [path] [Song Name] [Artist Name (Optional)]")
-        print("-f to upload file, -fl to upload file and get lyrics")
+        show_usage()
         sys.exit(1)
 
 if __name__ == '__main__':
