@@ -63,7 +63,7 @@ def return_output_synced(lyrics_data: Dict[str, Any], predicted_chords: list[Opt
         lyrics_indiv_lines = lyrics_synced.strip().split("\n")
         formatted_chords = formattingOutput.format_synced_chord_grid(centisecond_chord, timestamps)
         formatted_chords_lines = formatted_chords.split("\n")
-        print("Printing Chords:")
+        #print("Printing Chords:")
 
         if (len(lyrics_indiv_lines) != len(formatted_chords_lines)):
             print("Length diff")

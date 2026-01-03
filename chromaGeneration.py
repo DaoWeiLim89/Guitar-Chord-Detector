@@ -52,8 +52,7 @@ def chord_template()->dict:
     key: Chord name e.g A or Am
     value: NDArray with 1 at each note in chord
     '''
-    all_chords = generate_extended_chords()
-    return all_chords
+    return generate_extended_chords()
 
 def chroma_func(myrecording: np.ndarray, frequency: int)->np.ndarray:
     '''
@@ -61,36 +60,41 @@ def chroma_func(myrecording: np.ndarray, frequency: int)->np.ndarray:
         n_chroma: number of chroma bins to produce -> 12 for 12 semitones
     '''
     # isolate harmonics component (strips away percussive elements)
-    recording_harm = librosa.effects.harmonic(y=myrecording, margin=8)
+    recording_harm = librosa.effects.harmonic(y=myrecording, margin=4, kernel_size=15)
     
-    hop_len = 512
+    hop_len = 2048
     win_len_smooth = int(0.2 * frequency / hop_len)  # 0.2s seconds window
     f_min = librosa.note_to_hz('C2')  # Set minimum frequency to C2
 
     # Hybrid approach with all 3
-    cqt = librosa.feature.chroma_cqt(y=recording_harm, sr=frequency, hop_length=hop_len)
-    stft = librosa.feature.chroma_stft(y=recording_harm, sr=frequency, hop_length=hop_len)
-    cens = librosa.feature.chroma_cens(
+    cqt = librosa.feature.chroma_cqt(y=recording_harm, sr=frequency, hop_length=hop_len, tuning=0)
+    stft = librosa.feature.chroma_stft(y=recording_harm, sr=frequency, hop_length=hop_len, tuning=0)
+    '''cens = librosa.feature.chroma_cens(
         y=recording_harm, sr=frequency, cqt_mode='hybrid', 
         hop_length=hop_len, win_len_smooth=win_len_smooth, 
-        fmin=f_min)
+        fmin=f_min)'''
 
     # weights for each chroma feature
-    cqt_w = 0.6
-    stft_w = 0.3
-    cens_w = 0.1
+    cqt_w = 0.65
+    stft_w = 0.35
+    #cens_w = 0.1
 
-    combined = (cqt_w * cqt) + (stft_w * stft) + (cens_w * cens)
+    combined = (cqt_w * cqt) + (stft_w * stft) #+ (cens_w * cens)
 
     # square values to increase contrast
-    combined = np.power(combined, 2)
+    combined = combined * combined
 
     # remove low energy notes
+    # vectorized
+    max_per_frame = np.max(combined, axis=0, keepdims=True)
+    thresholds = 0.1 * max_per_frame
+    combined[combined < thresholds] = 0
+    '''
     for t in range(combined.shape[1]):
         col = combined[:, t]
         # Only keep notes > 10% of the strongest note
         threshold = 0.1 * np.max(col)
-        combined[col < threshold, t] = 0
+        combined[col < threshold, t] = 0'''
 
     chroma_cqt = librosa.util.normalize(combined, norm=2, axis=0) # norm=2 for Euclidean norm
 
@@ -114,36 +118,32 @@ def predict_chords(chroma_cqt: np.ndarray, all_chords: dict, threshold: float=0.
     ''' Normalizes the chroma vector before going through all chord templates to find the best match
         normalizes it to get the relative differences in chroma vectors for a more accurate prediction
     '''
+    # Prepare templates matrix
+    chord_names = list(all_chords.keys())
+    template_matrix = np.array([all_chords[name] for name in chord_names]).T  # (12, 24)
+
+    # Normalize chroma vectors (per frame)
+    norms = norm(chroma_cqt, axis=0, keepdims=True)
+    norms[norms == 0] = 1  # avoid division by zero
+    chroma_normalized = chroma_cqt / norms
+
+    # Score calc (24, 12) @ (12, N) = (24, N)
+    scores = np.dot(template_matrix.T, chroma_normalized)
+
+    # Find best chord per frame
+    max_indices = np.argmax(scores, axis=0)
+    max_scores = np.max(scores, axis=0)
+
+    # Compute low-energy mask
+    frame_energy = np.sum(chroma_cqt, axis=0)
+    
+    # Make predictions
     predicted_chords = []
-
     for i in range(chroma_cqt.shape[1]):
-        chroma_vector = chroma_cqt[:, i]
-
-        # skip low energy
-        if np.sum(chroma_vector) < 0.2:
+        if frame_energy[i] < 0.2 or max_scores[i] < threshold:
             predicted_chords.append(None)
-            continue
-
-        best_match = None
-        best_score = -1
-
-        chroma_norm = norm(chroma_vector)
-        if chroma_norm > 0:
-            chroma_unit = chroma_vector / chroma_norm
-            for chord_name, chord_template in all_chords.items():
-                score = np.dot(chroma_unit, chord_template)
-
-                if score > best_score:
-                    best_score = score
-                    best_match = chord_name
         else:
-            predicted_chords.append(None)
-            continue
-
-        if best_score >= threshold:
-            predicted_chords.append(best_match)
-        else:
-            predicted_chords.append(None)
+            predicted_chords.append(chord_names[max_indices[i]])
 
     return predicted_chords
 '''
@@ -183,7 +183,7 @@ def post_process_chords(predicted_chords: list, window_size: int = 15) -> list:
     return processed_chords
 '''
 
-def post_process_chords(predicted_chords: list, window_size: int = 15) -> list:
+def post_process_chords(predicted_chords: list, window_size: int = 5) -> list:
     ''' Processes chords using a Categorical Median Filter to clean up noisy predictions 
     and fill small gaps with a majority vote
     Uses a sliding window approach. Window size = width of window

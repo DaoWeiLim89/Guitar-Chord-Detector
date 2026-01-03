@@ -7,14 +7,14 @@ import numpy as np
 from typing import List, Optional
 
 def chords_to_centiseconds(processed_chords: List[Optional[str]], 
-                          hop_length: int = 512, 
-                          sr: int = 22050) -> List[Optional[str]]:
+                          hop_length: int = 2048, 
+                          sr: int = 11025) -> List[Optional[str]]:
     """
     Convert chord predictions from frame-based to centisecond-based timing.
     Args:
         processed_chords: List of chord predictions per frame (can contain None)
-        hop_length: Hop length used in chroma_cqt (default 512)
-        sr: Sample rate (default 22050)
+        hop_length: Hop length used in chroma_cqt (default 2048)
+        sr: Sample rate (default 11025)
     
     Returns:
         List of chords where each index represents one centisecond (0.01s)
@@ -311,8 +311,8 @@ if __name__ == "__main__":
     # Convert to centiseconds
     centisecond_chords = chords_to_centiseconds(
         example_processed_chords, 
-        hop_length=512, 
-        sr=22050
+        hop_length=2048, 
+        sr=11025
     )
     
     print("Centisecond-based chords (first 50):")

@@ -1,0 +1,6 @@
+The accuracy at its peak was 91%
+For faster processing, hop_length and sr were changed which decreased accuracy.
+res_type='kaiser_fast' was also added, wasn't prevkously there for faster processing.
+Also removed cens this didnt seem to change accuracy though (was only 0.1 weightage)
+for recording_harm, changed margin=8 to 4, kernel_size=15 was added. Accuracy went up overall even though deceptecon dropped?
+Window size was also chanaged to adjust for the change in the duration of each frame
