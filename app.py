@@ -51,7 +51,7 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 @limiter.limit("3/minute")
 async def analyze_Chords(
     request: Request, # instead of websockets (doesn't need open connection for back and forth conversation)
-    file: UploadFile = File(..., max_length=50_000_000),  # Max file size ~50MB
+    file: UploadFile = File(...),  # Max file size ~50MB
     song_name: str = Form(...),
     artist_name: str = Form(...)
 ):
@@ -59,7 +59,9 @@ async def analyze_Chords(
     Main endpoint: Accept MP3 file, song name, and artist name
     Returns: JSON with detected chords and lyrics
     """
-
+    # Check file size
+    if file.size and file.size > 50_000_000:
+        return ErrorResponse(status="error", message="File size exceeds the 50MB limit")
     # Check file safety
     if not file.filename:
         return ErrorResponse(status="error", message="No filename provided")
