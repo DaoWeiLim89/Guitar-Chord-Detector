@@ -5,14 +5,27 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 import tempfile
-import shutil
 import os
-from typing import Optional
 import uuid
 import main
 from pydantic import BaseModel
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import asynccontextmanager
+import re
+import traceback
 
-app = FastAPI()
+# Create a pool of threads to handle heavy lifting
+executor = ThreadPoolExecutor(max_workers=4)  # Limit workers
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    yield
+    # Shutdown - clean up executor
+    executor.shutdown(wait=True)
+
+app = FastAPI(lifespan=lifespan)
 
 # Enable CORS for frontend requests
 app.add_middleware(
@@ -46,6 +59,10 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
             "message": "Rate limit exceeded. Please try again later."
         }
     )
+
+def clean_filename(filename: str) -> str:
+    # Remove any character that isn't alphanumeric, dot, dash, or underscore
+    return re.sub(r'[^a-zA-Z0-9._-]', '', filename)
 
 @app.post("/api/analyzeChords", response_model=SuccessResponse | ErrorResponse)
 @limiter.limit("3/minute")
@@ -88,15 +105,30 @@ async def analyze_Chords(
     temp_path = None
     try:
         # Save uploaded file temporarily
-        temp_path = os.path.join(tempfile.gettempdir(), f"audio_{uuid.uuid4()}_{file.filename}")
+        safe_name = clean_filename(file.filename)
+        temp_path = os.path.join(tempfile.gettempdir(), f"audio_{uuid.uuid4()}_{safe_name}")
+        
+        # More robust file size check -> checking while writing
+        MAX_SIZE = 50 * 1024 * 1024  # 50MB
+        size_written = 0
+        # Write to file (Streaming is safer for RAM)
         with open(temp_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+            while content := await file.read(1024 * 1024):  # Read 1MB chunks
+                size_written += len(content)
+                if size_written > MAX_SIZE:
+                    # Delete file and abort immediately
+                    buffer.close()
+                    os.remove(temp_path)
+                    return ErrorResponse(status="error", message="File too large")
+                buffer.write(content)
+
+        loop = asyncio.get_running_loop()
         
         # Get the formatted output
-        type, output = main.process_audio_file(temp_path, song_name, artist_name)
-        
-        # Clean up temp file
-        os.remove(temp_path)
+        type, output = await loop.run_in_executor(
+            executor, 
+            lambda: main.process_audio_file(temp_path, song_name, artist_name)
+        )
          
         if output is None or output.strip() == "":
             return ErrorResponse(status="error", message="Could not process the audio file or retrieve lyrics. output is None.")
@@ -110,12 +142,13 @@ async def analyze_Chords(
             )
         
     except Exception as e:
-        print(f"Processing error: {str(e)}")
+        print(f"Error processing file: {e}")
+        traceback.print_exc()
         return ErrorResponse(status="error", message="An error occurred during processing")
     
     finally:
         if temp_path and os.path.exists(temp_path):
-            os.remove(temp_path)
+            os.remove(temp_path) # clean up temp file
 
 @app.get("/health")
 def health_check():
