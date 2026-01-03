@@ -17,7 +17,7 @@ app = FastAPI()
 # Enable CORS for frontend requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Change this to your frontend domain in production
+    allow_origins=["https://chord-detector-website.vercel.app/"],  # Frontend Domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
