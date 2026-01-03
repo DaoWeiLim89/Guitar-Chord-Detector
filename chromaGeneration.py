@@ -146,55 +146,13 @@ def predict_chords(chroma_cqt: np.ndarray, all_chords: dict, threshold: float=0.
             predicted_chords.append(None)
 
     return predicted_chords
-
 '''
-def post_process_chords(predicted_chords: list, min_frames: int|None) -> list[Optional[str]]:
-    """
-    Post-processing to remove very short chord segments
-    min_duration: minimum number of frames a chord should last
-    """
-    if min_frames is None:
-        min_frames = 3
-    if not predicted_chords:
-        return predicted_chords
-    
-    processed_chords = predicted_chords.copy()
-
-    for i in range(1, len(processed_chords) - 1):
-        # Remove isolated chord detections
-        if (processed_chords[i] is not None and 
-            processed_chords[i-1] != processed_chords[i] and 
-            processed_chords[i+1] != processed_chords[i]):
-            processed_chords[i] = None
-        # Fill short gaps between same chords 
-        elif (processed_chords[i] is None and 
-            processed_chords[i-1] == processed_chords[i+1] and 
-            processed_chords[i-1] is not None):
-            processed_chords[i] = processed_chords[i-1]
-
-    for i in range(min_frames, len(processed_chords) - 1 - min_frames):
-        # Removes isolated chord detections
-        if processed_chords[i] is not None:
-            consecutive_frames = 0
-            for x in range(min_frames):
-                if processed_chords[i-x] is not None:
-                    if processed_chords[i-x] == processed_chords[i]:
-                        consecutive_frames += 1
-                if processed_chords[i+x] is not None:
-                    if processed_chords[i+x] == processed_chords[i]:
-                        consecutive_frames += 1
-            if consecutive_frames < min_frames:
-                processed_chords[i] = None
-
-    return processed_chords
-    '''
-# implement the new post-processing method here
-
 def post_process_chords(predicted_chords: list, window_size: int = 15) -> list:
-    ''' Processes chords using a Categorical Median Filter to clean up noisy predictions 
+    Processes chords using a Categorical Median Filter to clean up noisy predictions 
     and fill small gaps with a majority vote
     Uses a sliding window approach. Window size = width of window
-    '''
+
+    
     if not predicted_chords:
         return predicted_chords
     
@@ -221,5 +179,54 @@ def post_process_chords(predicted_chords: list, window_size: int = 15) -> list:
             processed_chords.append(cur_chord)
         else:
             processed_chords.append(most_common_chord)
+
+    return processed_chords
+'''
+
+def post_process_chords(predicted_chords: list, window_size: int = 15) -> list:
+    ''' Processes chords using a Categorical Median Filter to clean up noisy predictions 
+    and fill small gaps with a majority vote
+    Uses a sliding window approach. Window size = width of window
+    '''
+    
+    if not predicted_chords:
+        return predicted_chords
+    
+    n = len(predicted_chords)
+    processed_chords = []
+    radius = window_size // 2
+    most_frequent = collections.Counter()
+
+    # Initialize window for i=0: indices [0, radius]
+    for j in range(min(radius + 1, n)):
+        if predicted_chords[j] is not None:
+            most_frequent[predicted_chords[j]] += 1
+
+    for i in range(n):
+        # Find best chord from current window
+        best_chord = None
+        max_count = 0
+        for chord, count in most_frequent.items():
+            if count > max_count:
+                max_count = count
+                best_chord = chord
+
+        # Tie-breaker: prefer current chord
+        cur = predicted_chords[i]
+        if cur is not None and most_frequent[cur] == max_count:
+            best_chord = cur
+
+        processed_chords.append(best_chord if max_count > 0 else None)
+
+        # Slide window for next iteration
+        left_out = i - radius
+        right_in = i + radius + 1
+        
+        if left_out >= 0 and predicted_chords[left_out] is not None:
+            most_frequent[predicted_chords[left_out]] -= 1
+            if most_frequent[predicted_chords[left_out]] == 0:
+                del most_frequent[predicted_chords[left_out]]
+        if right_in < n and predicted_chords[right_in] is not None:
+            most_frequent[predicted_chords[right_in]] += 1
 
     return processed_chords
