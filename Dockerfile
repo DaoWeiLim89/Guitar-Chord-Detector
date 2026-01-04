@@ -16,4 +16,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Pointing to app.py
-CMD exec uvicorn app:app --timeout 300 --host 0.0.0.0 --port $PORT
+# Use Gunicorn with Uvicorn workers
+CMD ["gunicorn", "main:app", "--workers", "1", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:$PORT", "--timeout", "120"]
