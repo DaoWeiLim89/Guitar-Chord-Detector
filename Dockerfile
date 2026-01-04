@@ -17,4 +17,4 @@ COPY . .
 
 # Pointing to app.py
 # Use Gunicorn with Uvicorn workers
-CMD gunicorn app:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --timeout 120
+CMD gunicorn app:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --timeout 300

@@ -114,9 +114,6 @@ async def analyze_Chords(
     Main endpoint: Accept MP3 file, song name, and artist name
     Returns: JSON with detected chords and lyrics
     """
-    # Check file size
-    if file.size and file.size > 50_000_000:
-        return ErrorResponse(status="error", message="File size exceeds the 50MB limit")
     # Check file safety
     if not file.filename:
         return ErrorResponse(status="error", message="No filename provided")

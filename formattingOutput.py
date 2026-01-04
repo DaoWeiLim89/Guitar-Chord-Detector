@@ -206,8 +206,7 @@ def format_synced_chord_grid(centisecond_chords: List[Optional[str]], timestamps
     total_duration_cs = len(centisecond_chords)
     total_duration_lyrics = timestamp_to_cs(timestamps[-1])
     if total_duration_lyrics > total_duration_cs:
-        print("Lyrics longer than duration of mp3 file. Likely lyrics mismatch. Exiting")
-        exit(1)
+        raise ValueError("Lyrics are longer than the MP3 file duration.")
     start_interval_cs = 0
     prev_timestamp = "[00:00.00]"
     # Process each interval
