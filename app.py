@@ -56,7 +56,7 @@ async def check_origin(request: Request, call_next):
 # Enable CORS for frontend requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://chord-detector-website.vercel.app"],  # Frontend Domain
+    allow_origins=["https://chord-detector-website.vercel.app", "http://localhost:3000"],  # Frontend Domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
