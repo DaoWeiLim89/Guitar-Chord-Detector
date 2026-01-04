@@ -62,19 +62,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class SuccessResponse(BaseModel):
-    status: str
-    type: str
-    output: str
-    song_name: str
-    artist_name: str
-
-class ErrorResponse(BaseModel):
-    status: str
-    message: str
-
 # Set up rate limiting
-limiter = Limiter(key_func=get_remote_address)
+def get_real_ip(request: Request):
+    # Google Cloud Run puts the real user IP in this header
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        # The header can contain multiple IPs "client, proxy1, proxy2"
+        # The first one is the real client
+        ips = [ip.strip() for ip in forwarded.split(",")]
+        return ips[0]
+    
+    # Fallback for local development
+    return request.client.host or "127.0.0.1"
+
+limiter = Limiter(key_func=get_real_ip)
 app.state.limiter = limiter
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
@@ -89,6 +90,17 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 def clean_filename(filename: str) -> str:
     # Remove any character that isn't alphanumeric, dot, dash, or underscore
     return re.sub(r'[^a-zA-Z0-9._-]', '', filename)
+
+class SuccessResponse(BaseModel):
+    status: str
+    type: str
+    output: str
+    song_name: str
+    artist_name: str
+
+class ErrorResponse(BaseModel):
+    status: str
+    message: str
 
 @app.post("/api/analyzeChords", response_model=SuccessResponse | ErrorResponse)
 @limiter.limit("2/minute")
