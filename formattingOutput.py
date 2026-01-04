@@ -7,15 +7,14 @@ import numpy as np
 from typing import List, Optional
 
 def chords_to_centiseconds(processed_chords: List[Optional[str]], 
-                          hop_length: int = 2048, 
-                          sr: int = 11025) -> List[Optional[str]]:
+                          hop_length: int = 256, 
+                          sr: int = 22050) -> List[Optional[str]]:
     """
     Convert chord predictions from frame-based to centisecond-based timing.
     Args:
         processed_chords: List of chord predictions per frame (can contain None)
-        hop_length: Hop length used in chroma_cqt (default 2048)
+        hop_length: Hop length used in chroma_cqt (default 1024)
         sr: Sample rate (default 11025)
-    
     Returns:
         List of chords where each index represents one centisecond (0.01s)
     """
@@ -35,42 +34,6 @@ def chords_to_centiseconds(processed_chords: List[Optional[str]],
             centisecond_chords[cs] = processed_chords[frame_idx]
     
     return centisecond_chords
-'''
-def chords_to_centiseconds(processed_chords: List[Optional[str]], hop_length: int = 512, sr: int = 22050) -> List[Optional[str]]:
-    """
-    Convert chord predictions from frame-based to centisecond-based timing.
-    Args:
-        processed_chords: List of chord predictions per frame (can contain None)
-        hop_length: Hop length used in chroma_cqt (default 512)
-        sr: Sample rate (default 22050)
-    Returns: List of chords where each index represents one centisecond (0.01s)
-    """
-    # Calculate time per frame in seconds
-    time_per_frame = hop_length / sr
-
-    # Calculate total duration in seconds
-    total_duration = len(processed_chords) * time_per_frame
-
-    # Calculate number of centiseconds
-    num_centiseconds = int(np.ceil(total_duration * 100))
-
-    # Initialize output array with explicit type hint
-    centisecond_chords: List[Optional[str]] = [None] * num_centiseconds
-
-    # Map each centisecond to the corresponding frame
-    for cs in range(num_centiseconds):
-        # Convert centisecond to seconds
-        time_in_seconds = cs / 100.0
-
-        # Find corresponding frame
-        frame_idx = int(time_in_seconds / time_per_frame)
-
-        # Ensure we don't go out of bounds
-        if frame_idx < len(processed_chords):
-            centisecond_chords[cs] = processed_chords[frame_idx]
-
-    return centisecond_chords 
-'''
 
 def format_lrc_timestamp(centiseconds: int) -> str:
     """
@@ -311,8 +274,8 @@ if __name__ == "__main__":
     # Convert to centiseconds
     centisecond_chords = chords_to_centiseconds(
         example_processed_chords, 
-        hop_length=2048, 
-        sr=11025
+        hop_length=256, 
+        sr=22050
     )
     
     print("Centisecond-based chords (first 50):")

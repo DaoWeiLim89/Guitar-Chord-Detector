@@ -54,11 +54,12 @@ def chord_template()->dict:
     '''
     return generate_extended_chords()
 
+'''
 def chroma_func(myrecording: np.ndarray, frequency: int)->np.ndarray:
-    '''
+    
         win_len_smooth: number of frames for smoothing window
         n_chroma: number of chroma bins to produce -> 12 for 12 semitones
-    '''
+    
     # isolate harmonics component (strips away percussive elements)
     recording_harm = librosa.effects.harmonic(y=myrecording, margin=4, kernel_size=15)
     
@@ -69,10 +70,10 @@ def chroma_func(myrecording: np.ndarray, frequency: int)->np.ndarray:
     # Hybrid approach with all 3
     cqt = librosa.feature.chroma_cqt(y=recording_harm, sr=frequency, hop_length=hop_len, tuning=0)
     stft = librosa.feature.chroma_stft(y=recording_harm, sr=frequency, hop_length=hop_len, tuning=0)
-    '''cens = librosa.feature.chroma_cens(
+    cens = librosa.feature.chroma_cens(
         y=recording_harm, sr=frequency, cqt_mode='hybrid', 
         hop_length=hop_len, win_len_smooth=win_len_smooth, 
-        fmin=f_min)'''
+        fmin=f_min)
 
     # weights for each chroma feature
     cqt_w = 0.65
@@ -89,16 +90,10 @@ def chroma_func(myrecording: np.ndarray, frequency: int)->np.ndarray:
     max_per_frame = np.max(combined, axis=0, keepdims=True)
     thresholds = 0.1 * max_per_frame
     combined[combined < thresholds] = 0
-    '''
-    for t in range(combined.shape[1]):
-        col = combined[:, t]
-        # Only keep notes > 10% of the strongest note
-        threshold = 0.1 * np.max(col)
-        combined[col < threshold, t] = 0'''
 
     chroma_cqt = librosa.util.normalize(combined, norm=2, axis=0) # norm=2 for Euclidean norm
 
-    ''' Debugging info to see chroma values at certain frames
+     Debugging info to see chroma values at certain frames
     np.set_printoptions(precision=3, suppress=True, linewidth=200)
     
     for t in [0, 100, 500, 1000, 2000]:
@@ -111,8 +106,92 @@ def chroma_func(myrecording: np.ndarray, frequency: int)->np.ndarray:
             print(f"  Top 3: {[note_names[i] for i in top3_idx]} = {col[top3_idx]}")
             print(f"  Max/Min ratio: {col.max() / max(col.min(), 1e-6):.1f}")
     
-    np.set_printoptions()'''
+    np.set_printoptions()
     return chroma_cqt
+'''
+def chroma_func(myrecording: np.ndarray, frequency: int) -> np.ndarray:
+    """
+    ULTRA-OPTIMIZED Hybrid Chroma
+    1. Manually computes STFT/HPSS once.
+    2. Feeds the Harmonic Spectrogram directly to STFT/CENS (skips re-calculation).
+    3. Only does Inverse FFT for CQT.
+    """
+        
+    hop_len = 256
+    
+    # --- 2. MANUAL HARMONIC SEPARATION (The Big Optimization) ---
+    # Instead of librosa.effects.harmonic (which hides data), we do it manually.
+    
+    # Calculate STFT once
+    stft = librosa.stft(myrecording, hop_length=hop_len)
+    
+    # Separate Harmonic/Percussive components directly on the spectrogram
+    # kernel_size=15 is fast. margin=4.0 matches your previous "heavy" logic.
+    stft_harm, stft_perc = librosa.decompose.hpss(
+        stft, 
+        kernel_size=15, 
+        margin=4.0
+    )
+    
+    # We now have the Harmonic Spectrogram (stft_harm). 
+    # We can pass THIS directly to chroma functions!
+    
+    # --- 3. COMPUTE FEATURES (Reusing Data) ---
+    
+    # A. Chroma STFT (FASTEST - uses pre-computed spectrogram)
+    # We pass S=abs(stft_harm)**2 to skip the internal STFT calculation
+    chroma_stft = librosa.feature.chroma_stft(
+        S=np.abs(stft_harm)**2, 
+        sr=frequency,
+        tuning=0
+    )
+    
+    '''# B. Chroma CENS (FAST - uses pre-computed spectrogram)
+    chroma_cens = librosa.feature.chroma_cens(
+        S=np.abs(stft_harm)**2,
+        sr=frequency,
+        hop_length=hop_len,
+        fmin=librosa.note_to_hz('C2'),
+        tuning=0,
+        n_octaves=6 # Limit octaves for speed
+    )'''
+
+    # C. Chroma CQT (SLOW - requires Time Domain audio)
+    # We must convert our Harmonic Spectrogram back to audio for CQT.
+    # This is the only "heavy" step remaining.
+    y_harm = librosa.istft(stft_harm, hop_length=hop_len)
+    
+    chroma_cqt = librosa.feature.chroma_cqt(
+        y=y_harm, 
+        sr=frequency, 
+        hop_length=hop_len, 
+        threshold=0.01,
+        tuning=0,
+    )
+
+    # --- 4. COMBINE & NORMALIZE ---
+    # (Same logic as before)
+    cqt_w = 0.6
+    stft_w = 0.3
+    #cens_w = 0.1
+    
+    # Ensure shapes match (CQT sometimes drops a frame)
+    min_len = min(chroma_cqt.shape[1], chroma_stft.shape[1])#, chroma_cens.shape[1])
+    chroma_cqt = chroma_cqt[:, :min_len]
+    chroma_stft = chroma_stft[:, :min_len]
+    #chroma_cens = chroma_cens[:, :min_len]
+
+    combined = (cqt_w * chroma_cqt) + (stft_w * chroma_stft) #+ (cens_w * chroma_cens)
+    
+    # Square for contrast
+    combined = combined ** 2
+    
+    # Filter noise
+    col_max = np.max(combined, axis=0)
+    mask = combined < (0.1 * col_max)
+    combined[mask] = 0
+
+    return librosa.util.normalize(combined, norm=2, axis=0)
 
 def predict_chords(chroma_cqt: np.ndarray, all_chords: dict, threshold: float=0.825)->list:
     ''' Normalizes the chroma vector before going through all chord templates to find the best match
@@ -146,42 +225,6 @@ def predict_chords(chroma_cqt: np.ndarray, all_chords: dict, threshold: float=0.
             predicted_chords.append(chord_names[max_indices[i]])
 
     return predicted_chords
-'''
-def post_process_chords(predicted_chords: list, window_size: int = 15) -> list:
-    Processes chords using a Categorical Median Filter to clean up noisy predictions 
-    and fill small gaps with a majority vote
-    Uses a sliding window approach. Window size = width of window
-
-    
-    if not predicted_chords:
-        return predicted_chords
-    
-    processed_chords = []
-    radius = window_size // 2
-
-    for i in range(len(predicted_chords)):
-        start = max(0, i-radius)
-        end = min(len(predicted_chords), i+radius+1)
-        window = predicted_chords[start:end]
-
-        valid_chords = [chord for chord in window if chord is not None] # filter out None values
-
-        if not valid_chords:
-            processed_chords.append(None)
-            continue
-        
-        counts = collections.Counter(valid_chords)
-        most_common_chord, freq = counts.most_common(1)[0]
-
-        # tie breaker - choose the current chord if tied
-        cur_chord = predicted_chords[i]
-        if cur_chord is not None and counts[cur_chord] == freq:
-            processed_chords.append(cur_chord)
-        else:
-            processed_chords.append(most_common_chord)
-
-    return processed_chords
-'''
 
 def post_process_chords(predicted_chords: list, window_size: int = 5) -> list:
     ''' Processes chords using a Categorical Median Filter to clean up noisy predictions 

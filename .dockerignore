@@ -1,0 +1,20 @@
+# Ignore the virtual environment (CRITICAL)
+venv/
+env/
+.env
+
+# Ignore git history (Saves space)
+.git/
+.gitignore
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+
+# Ignore Mac/Windows system files
+.DS_Store
+Thumbs.db
+
+# Ignore the Dockerfile itself inside the image
+Dockerfile
+.dockerignore

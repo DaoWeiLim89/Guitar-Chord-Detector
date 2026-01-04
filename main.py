@@ -52,7 +52,7 @@ def process_audio_file(temp_path, song_name, artist_name):
     output: [type: {synced, unsynced}, output: str]
     '''
     # default
-    frequency = 11025 # lower sampling rate for faster processing
+    frequency = 22050 # lower sampling rate for faster processing
     all_chords = chromaGeneration.chord_template()
 
     filepath = temp_path
@@ -62,7 +62,7 @@ def process_audio_file(temp_path, song_name, artist_name):
     type = "Not Set"
 
     # Get file recording
-    myrecording, sr = librosa.load(filepath, sr=frequency, mono=True, res_type='kaiser_fast')
+    myrecording, sr = librosa.load(filepath, sr=frequency, mono=True)
 
     # Process Chords
     chroma_cqt = chromaGeneration.chroma_func(myrecording, frequency)

@@ -27,6 +27,32 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# Allowed origins
+ALLOWED_ORIGINS = ["https://chord-detector-website.vercel.app"]
+
+# Middleware to restrict requests to allowed origins
+@app.middleware("http")
+async def check_origin(request: Request, call_next):
+    if request.url.path == "/health":
+        return await call_next(request)
+        
+    # Standard CORS check handles the browser security. 
+    # We only want to block obvious non-browser requests or bad actors.
+    
+    # 1. OPTIONAL: Block requests with NO User-Agent (often scripts)
+    user_agent = request.headers.get("user-agent", "")
+    if not user_agent:
+        return JSONResponse(status_code=403, content={"message": "Missing User-Agent"})
+
+    # 2. Relaxed Origin Check
+    # If Origin is present, it MUST match. If missing, we let it slide (to avoid blocking privacy users),
+    # trusting the CORS middleware to handle browser contexts.
+    origin = request.headers.get("origin")
+    if origin and origin not in ALLOWED_ORIGINS:
+         return JSONResponse(status_code=403, content={"message": "Invalid Origin"})
+
+    return await call_next(request)
+
 # Enable CORS for frontend requests
 app.add_middleware(
     CORSMiddleware,
@@ -65,7 +91,7 @@ def clean_filename(filename: str) -> str:
     return re.sub(r'[^a-zA-Z0-9._-]', '', filename)
 
 @app.post("/api/analyzeChords", response_model=SuccessResponse | ErrorResponse)
-@limiter.limit("3/minute")
+@limiter.limit("2/minute")
 async def analyze_Chords(
     request: Request, # instead of websockets (doesn't need open connection for back and forth conversation)
     file: UploadFile = File(...),  # Max file size ~50MB
