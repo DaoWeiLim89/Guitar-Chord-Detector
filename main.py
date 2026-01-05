@@ -70,18 +70,19 @@ def process_audio_file(temp_path, song_name, artist_name):
     processed_chords = chromaGeneration.post_process_chords(predicted_chords)
 
     songLyrics = lyrics.get_lyrics(songName, artistName)
-    isSynced = False
+    isSynced = True
     synced_lyrics = None
     unsynced_lyrics = None
+
+    if synced_lyrics is None:
+            isSynced = False
 
     if songLyrics is not None:
         # Process Lyrics
         songLyrics = lyrics.prepend_lyrics(songLyrics) # prepend with [00:00.00]
-        synced_lyrics = lyrics.get_synced_lyrics(songLyrics)
+        if isSynced:
+            synced_lyrics = lyrics.get_synced_lyrics(songLyrics)
         unsynced_lyrics = lyrics.get_unsynced_lyrics(songLyrics)
-
-        if synced_lyrics is not None:
-            isSynced = True
 
         if synced_lyrics is None and unsynced_lyrics is None:
             #print("Lyrics could not be found\nPrinting Chords:")
@@ -167,9 +168,9 @@ def main():
             songLyrics = lyrics.prepend_lyrics(songLyrics) # prepend with [00:00.00]
             if isSynced:
                 synced_lyrics = lyrics.get_synced_lyrics(songLyrics)
-            print(f"synced_lyrics: {synced_lyrics}")
+            #print(f"synced_lyrics: {synced_lyrics}")
             unsynced_lyrics = lyrics.get_unsynced_lyrics(songLyrics)
-            print(f"unsynced_lyrics: {unsynced_lyrics}")
+            #print(f"unsynced_lyrics: {unsynced_lyrics}")
 
             if synced_lyrics is None and unsynced_lyrics is None:
                 print("Lyrics could not be found\nPrinting Chords:")
