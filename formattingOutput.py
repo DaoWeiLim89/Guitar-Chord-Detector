@@ -51,7 +51,9 @@ def format_lrc_timestamp(centiseconds: int) -> str:
     return f"[{minutes:02d}:{seconds:02d}.{cents:02d}]"
 
 def timestamp_to_cs(timestamp: str)->int:
+    print(f"timestamp: {timestamp}")
     timestamp = timestamp[1:-1]
+    print(f"trimmed timestamp: {timestamp}")
     mins, cseconds = timestamp.split(":")
     centiseconds = int(float(mins) * 60 * 100 + float(cseconds) * 100)
     return centiseconds

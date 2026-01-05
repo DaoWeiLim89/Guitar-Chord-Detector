@@ -35,7 +35,7 @@ def display_output_unsynced(lyrics_data: Dict[str, Any], predicted_chords: list[
     
     centisecond_chord = formattingOutput.chords_to_centiseconds(predicted_chords)
     formatted_output = formattingOutput.format_chord_grid(centisecond_chord)
-    lyrics_plain = lyrics_data.get("plainLyrics")
+    lyrics_plain = lyrics_data.get("plain_lyrics")
     print("Printing Chords:")
     print(formatted_output)
     print("Printing Lyrics:")
@@ -82,7 +82,7 @@ def return_output_unsynced(lyrics_data: Dict[str, Any], predicted_chords: list[O
     print("As the lyrics found do not have timestamps, chords will be printed in order followed by the lyrics:\n")
     centisecond_chord = formattingOutput.chords_to_centiseconds(predicted_chords)
     formatted_output = formattingOutput.format_chord_grid(centisecond_chord)
-    lyrics_plain = lyrics_data.get("plainLyrics")
+    lyrics_plain = lyrics_data.get("plain_lyrics")
     
     if lyrics_plain:
         output += formatted_output + "\n" + lyrics_plain

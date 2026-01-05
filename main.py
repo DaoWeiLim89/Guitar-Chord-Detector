@@ -156,23 +156,24 @@ def main():
         #show_chords(processed_chords)
 
         songLyrics = lyrics.get_lyrics(songName, artistName)
-        isSynced = False
+        isSynced = True
         synced_lyrics = None
         unsynced_lyrics = None
 
+        if synced_lyrics is None:
+            isSynced = False
         if songLyrics is not None:
             # Process Lyrics
             songLyrics = lyrics.prepend_lyrics(songLyrics) # prepend with [00:00.00]
-            synced_lyrics = lyrics.get_synced_lyrics(songLyrics)
+            if isSynced:
+                synced_lyrics = lyrics.get_synced_lyrics(songLyrics)
+            print(f"synced_lyrics: {synced_lyrics}")
             unsynced_lyrics = lyrics.get_unsynced_lyrics(songLyrics)
-
-            if synced_lyrics is not None:
-                isSynced = True
+            print(f"unsynced_lyrics: {unsynced_lyrics}")
 
             if synced_lyrics is None and unsynced_lyrics is None:
                 print("Lyrics could not be found\nPrinting Chords:")
                 outputChordDiagram.display_only_chords(processed_chords)
-
             elif isSynced:
                 print("Now outputting synced lyrics")
                 outputChordDiagram.display_output_synced(songLyrics, processed_chords)
