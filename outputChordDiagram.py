@@ -22,12 +22,13 @@ def display_output_synced(lyrics_data: Dict[str, Any], predicted_chords: list[Op
         formatted_chords_lines = formatted_chords.split("\n")
         print("Printing Chords:")
 
-        if (len(lyrics_indiv_lines) != len(formatted_chords_lines)):
+        '''if (len(lyrics_indiv_lines) != len(formatted_chords_lines)):
             print("Length diff")
-        else:
-            for i in range(len(formatted_chords_lines)):
+        else'''
+        for i in range(len(lyrics_indiv_lines)):
+            if i < len(formatted_chords_lines):
                 print(formatted_chords_lines[i])
-                print(lyrics_indiv_lines[i])
+            print(lyrics_indiv_lines[i])
 
 def display_output_unsynced(lyrics_data: Dict[str, Any], predicted_chords: list[Optional[str]])->None:
     ''' Displays chords and then lyrics separate '''
@@ -65,13 +66,16 @@ def return_output_synced(lyrics_data: Dict[str, Any], predicted_chords: list[Opt
         formatted_chords_lines = formatted_chords.split("\n")
         #print("Printing Chords:")
 
-        if (len(lyrics_indiv_lines) != len(formatted_chords_lines)):
+        '''if (len(lyrics_indiv_lines) != len(formatted_chords_lines)):
             print("Length diff")
-        else:
-            for i in range(len(formatted_chords_lines)):
+        else:'''
+        for i in range(len(lyrics_indiv_lines)):
+            if i < len(formatted_chords_lines):
                 output += formatted_chords_lines[i] + "\n" + lyrics_indiv_lines[i] + "\n"
-                #print(formatted_chords_lines[i])
-                #print(lyrics_indiv_lines[i])
+            else:
+                output += lyrics_indiv_lines[i] + "\n"
+            #print(formatted_chords_lines[i])
+            #print(lyrics_indiv_lines[i])
     
     return output
 
@@ -85,7 +89,7 @@ def return_output_unsynced(lyrics_data: Dict[str, Any], predicted_chords: list[O
     lyrics_plain = lyrics_data.get("plain_lyrics")
     
     if lyrics_plain:
-        output += formatted_output + "\n" + lyrics_plain
+        output += formatted_output + "\n\nLyrics:\n" + lyrics_plain
     
     '''print("Printing Chords:")
     print(formatted_output)

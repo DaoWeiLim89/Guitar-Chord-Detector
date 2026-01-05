@@ -51,9 +51,9 @@ def format_lrc_timestamp(centiseconds: int) -> str:
     return f"[{minutes:02d}:{seconds:02d}.{cents:02d}]"
 
 def timestamp_to_cs(timestamp: str)->int:
-    print(f"timestamp: {timestamp}")
+    #print(f"timestamp: {timestamp}")
     timestamp = timestamp[1:-1]
-    print(f"trimmed timestamp: {timestamp}")
+    #print(f"trimmed timestamp: {timestamp}")
     mins, cseconds = timestamp.split(":")
     centiseconds = int(float(mins) * 60 * 100 + float(cseconds) * 100)
     return centiseconds
@@ -207,13 +207,21 @@ def format_synced_chord_grid(centisecond_chords: List[Optional[str]], timestamps
     output = []
     total_duration_cs = len(centisecond_chords)
     total_duration_lyrics = timestamp_to_cs(timestamps[-1])
-    if total_duration_lyrics > total_duration_cs:
-        raise ValueError("Lyrics are longer than the MP3 file duration.")
+    #if total_duration_lyrics > total_duration_cs:
+    #    raise ValueError("Lyrics are longer than the MP3 file duration.")
     start_interval_cs = 0
     prev_timestamp = "[00:00.00]"
     # Process each interval
     for timestamp in timestamps[1:]:
         end_interval_cs = timestamp_to_cs(timestamp)
+
+        # clamp to available audio
+        if end_interval_cs > total_duration_cs:
+            end_interval_cs = total_duration_cs
+
+        # if we've already consumed all audio, stop
+        if start_interval_cs >= total_duration_cs:
+            break
 
         # Collect chord changes within this interval
         changes_in_interval = []

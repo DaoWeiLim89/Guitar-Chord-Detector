@@ -31,13 +31,20 @@ def get_lyrics(song_name: str, artist_name: str = "") -> Optional[Dict[str, Any]
         search_response.raise_for_status()
         
         search_results = search_response.json()
+        print(f"Search results: {len(search_results)} found")
+        #print(search_results)
         
         if not search_results:
             print("No search results found")
             return None
         
-        # Get the top result
-        top_result = search_results[0]
+        # Try finding synced lyrics
+        top_result = search_results[0] # default to first result
+        for result in search_results:
+            if result.get('syncedLyrics'):
+                top_result = result
+                break
+        
         song_id = top_result.get('id')
         
         if not song_id:
