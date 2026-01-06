@@ -119,34 +119,31 @@ def chroma_func(myrecording: np.ndarray, frequency: int) -> np.ndarray:
         
     hop_len = 256
     
-    # --- 2. MANUAL HARMONIC SEPARATION (The Big Optimization) ---
-    # Instead of librosa.effects.harmonic (which hides data), we do it manually.
-    
-    # Calculate STFT once
+    # Manual Harmonic separation to save redundant STFT calculations
     stft = librosa.stft(myrecording, hop_length=hop_len)
     
     # Separate Harmonic/Percussive components directly on the spectrogram
-    # kernel_size=15 is fast. margin=4.0 matches your previous "heavy" logic.
+    # kernel_size=15 
+    # margin=4.0 (Like old Librosa.harmonic setting)
+    # stft_harm = harmonic spectrogram
     stft_harm, stft_perc = librosa.decompose.hpss(
         stft, 
         kernel_size=15, 
         margin=4.0
     )
+
     
-    # We now have the Harmonic Spectrogram (stft_harm). 
-    # We can pass THIS directly to chroma functions!
+    # Compute Features
     
-    # --- 3. COMPUTE FEATURES (Reusing Data) ---
-    
-    # A. Chroma STFT (FASTEST - uses pre-computed spectrogram)
-    # We pass S=abs(stft_harm)**2 to skip the internal STFT calculation
+    # Chroma STFT (Using pre-computed spectrogram)
+    # Pass S=abs(stft_harm)**2 to skip the internal STFT calculation
     chroma_stft = librosa.feature.chroma_stft(
         S=np.abs(stft_harm)**2, 
         sr=frequency,
         tuning=0
     )
     
-    '''# B. Chroma CENS (FAST - uses pre-computed spectrogram)
+    '''# Chroma CENS (Using pre-computed spectrogram)
     chroma_cens = librosa.feature.chroma_cens(
         S=np.abs(stft_harm)**2,
         sr=frequency,
@@ -156,9 +153,8 @@ def chroma_func(myrecording: np.ndarray, frequency: int) -> np.ndarray:
         n_octaves=6 # Limit octaves for speed
     )'''
 
-    # C. Chroma CQT (SLOW - requires Time Domain audio)
-    # We must convert our Harmonic Spectrogram back to audio for CQT.
-    # This is the only "heavy" step remaining.
+    # Chroma CQT (Slow -> requires Time Domain audio)
+    # Must convert our Harmonic Spectrogram back to audio for CQT
     y_harm = librosa.istft(stft_harm, hop_length=hop_len)
     
     chroma_cqt = librosa.feature.chroma_cqt(
@@ -169,8 +165,7 @@ def chroma_func(myrecording: np.ndarray, frequency: int) -> np.ndarray:
         tuning=0,
     )
 
-    # --- 4. COMBINE & NORMALIZE ---
-    # (Same logic as before)
+    # Combine Features
     cqt_w = 0.6
     stft_w = 0.3
     #cens_w = 0.1
